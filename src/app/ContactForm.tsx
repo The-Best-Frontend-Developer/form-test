@@ -2,11 +2,11 @@ import React from 'react';
 import {useForm} from "react-hook-form";
 import {formSchema, MyFormType} from "@/src/app/formSchema";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/components/ui/form";
-import {Input} from "@/components/ui/input";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
-import {Checkbox} from "@/components/ui/checkbox";
-import {Button} from "@/components/ui/button";
+import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/src/components/ui/form";
+import {Input} from "@/src/components/ui/input";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/src/components/ui/select";
+import {Checkbox} from "@/src/components/ui/checkbox";
+import {Button} from "@/src/components/ui/button";
 
 const ContactForm = () => {
   const form = useForm<MyFormType>({
@@ -22,9 +22,15 @@ const ContactForm = () => {
   })
 
   function handleSubmit(data: MyFormType) {
-    console.log(data)
-  }
+    const cleanedData: MyFormType = {
+      ...data,
+      username: data.username.trim(),
+      telegram: data.telegram?.trim() ?? '',
+      phonenumber: data.phonenumber?.trim() ?? '',
+    };
 
+    console.log(cleanedData);
+  }
   return (
     <div className="flex justify-center bg-purple-200 w-screen h-screen md:p-10 p-5">
       <div className="flex flex-col w-[min(900px,_100%)] bg-white rounded-xl p-8 gap-4 h-fit">
@@ -102,20 +108,23 @@ const ContactForm = () => {
                 control={form.control}
                 name="telegram"
                 render={({field, fieldState}) => (
-                  <FormItem className="w-full"
-                            onChange={(e) => {
-                              field.onChange(e)
-                              form.trigger(['phonenumber', 'telegram'])
-                            }}
-                  >
+                  <FormItem className="w-full">
                     <div className="flex flex-col gap-0.5">
                       <FormLabel className="font-medium text-sm" htmlFor="telegram">Ник в Телеграмм</FormLabel>
                       <FormControl>
                         <Input
                           className={`${fieldState.invalid ? "border-destructive" : ""}`}
                           id="telegram"
-                          type="text"
                           {...field}
+                          type="text"
+                          onChange={(e) => {
+                            field.onChange(e);
+
+                            form.clearErrors("phonenumber");
+                            if (e.target.value.length > 0) {
+                              form.trigger("telegram");
+                            }
+                          }}
                         />
                       </FormControl>
                     </div>
@@ -128,21 +137,25 @@ const ContactForm = () => {
                 control={form.control}
                 name="phonenumber"
                 render={({field, fieldState}) => (
-                  <FormItem className="w-full"
-                            onChange={(e) => {
-                              field.onChange(e)
-                              form.trigger(['phonenumber', 'telegram'])
-                            }}
-                  >
+                  <FormItem className="w-full">
                     <div className="flex flex-col gap-0.5">
                       <FormLabel className="font-medium text-sm" htmlFor="phonenumber">Номер</FormLabel>
                       <FormControl>
                         <Input
                           className={`${fieldState.invalid ? "border-destructive" : ""}`}
+                          {...field}
                           id="phonenumber"
+                          onChange={(e) => {
+                            field.onChange(e);
+
+                            form.clearErrors("telegram");
+                            if (e.target.value.length > 0) {
+                              form.trigger("phonenumber");
+                            }
+                          }}
                           type="tel"
                           placeholder="+7 (___) ___-__-__"
-                          {...field}
+
                         />
                       </FormControl>
                     </div>
@@ -166,10 +179,15 @@ const ContactForm = () => {
                         field.onChange(e);
                         form.trigger("specialization")
                       }}
+                      onOpenChange={(isOpen) => {
+                        if (!isOpen) {
+                          form.trigger("specialization"); // Валидация при закрытии
+                        }
+                      }}
                     >
-                      <SelectTrigger id="direction"
-                                     className={`${fieldState.invalid ? "border-1 border-destructive" : ""} w-full`}
-                                     onBlur={() => form.trigger("specialization")}
+                      <SelectTrigger
+                        id="direction"
+                        className={`${fieldState.invalid ? "border-1 border-destructive" : ""} w-full`}
                       >
                         <SelectValue placeholder="Выбери направление"/>
                       </SelectTrigger>
